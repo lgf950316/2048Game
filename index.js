@@ -12,7 +12,7 @@ app.stage.addChild(basicText);
 
 var grid = [];
 for (var i = 0; i < 4; i++) {
-    grid[i] = [0, 0,0, 0]
+    grid[i] = [0, 0, 0, 0]
 }
 
 function flushUI() {
@@ -29,42 +29,77 @@ function randomNumber() {
     return Math.floor(Math.random() * 4);
 }
 
-function drawcell(x, y) {
+function drawcell(rowIndex, columnIndex) {
 
     var graphics = new PIXI.Graphics();
-    graphics.beginFill(getColorByNumber(grid[x][y]), 1);
-    graphics.drawRect(y * 190 + app.renderer.width / 8.5, x * 190 + app.renderer.height / 8 * 2.5, 185, 185);
+    graphics.beginFill(getColorByNumber(grid[rowIndex][columnIndex]), 1);
+    graphics.drawRect(columnIndex * 190 + app.renderer.width / 8.5, rowIndex * 190 + app.renderer.height / 8 * 2.5, 185, 185);
     app.stage.addChild(graphics);
 
-    if (grid[x][y] !== 0) {
-        var number = new PIXI.Text(grid[x][y], {fontSize: 150});
+    if (grid[rowIndex][columnIndex] !== 0) {
+        var number = new PIXI.Text(grid[rowIndex][columnIndex], {fontSize: 150});
         number.anchor.set(0.5);
-        number.x = 185 / 2 + app.renderer.width / 8.5 + y * 190;
-        number.y = 185 / 2 + app.renderer.height / 8 * 2.5 + x * 190;
+        number.x = 185 / 2 + app.renderer.width / 8.5 + columnIndex * 190;
+        number.y = 185 / 2 + app.renderer.height / 8 * 2.5 + rowIndex * 190;
         app.stage.addChild(number);
     }
 }
 
-function getColorByNumber(number){
-    var colorValue={
-        0:0xFFA54F,
-        2:0x00ffff,
-        4:0x0000ff
+function getColorByNumber(number) {
+    var colorValue = {
+        0: 0xFFA54F,
+        2: 0x00ffff,
+        4: 0x0000ff
+    };
+    var color = colorValue[number];
+    if (color === undefined) {
+        color = 0xff0fff;
     }
-    return colorValue[number];
+
+    return color;
 }
 
-var rwoIndex = randomNumber();
-var columnIndex = randomNumber();
-grid[rwoIndex][columnIndex] = 2;
+function addRandomCell() {
+    var rowIndex = randomNumber();
+    var columnIndex = randomNumber();
+    while (grid[rowIndex][columnIndex] !== 0 ){
+        rowIndex = randomNumber();
+        columnIndex = randomNumber();
+    }
+    grid[rowIndex][columnIndex] = 2;
+}
+addRandomCell();
+addRandomCell();
 flushUI();
 
 document.addEventListener("keydown", function (event) {
-    if (event.keyCode == 39) {
+    if (event.keyCode == 39) {//right
         moveCellToRight();
         flushUI();
     }
+    if (event.keyCode == 38) {//up
+        rotateArray(1);
+        moveCellToRight();
+        rotateArray(3);
+        addRandomCell();
+        flushUI();
+    }
 
+    if (event.keyCode == 37) {//left
+        rotateArray(2);
+        moveCellToRight();
+        rotateArray(2);
+        addRandomCell();
+        flushUI();
+    }
+
+    if (event.keyCode == 40) {//down
+        rotateArray(3);
+        moveCellToRight();
+        rotateArray(1);
+        addRandomCell();
+        flushUI();
+    }
 })
 
 function moveCellToRight() {
@@ -76,11 +111,11 @@ function moveCellToRight() {
             if (theEmptyCellIndex !== -1) {
                 grid[rowIndex][theEmptyCellIndex] = grid[rowIndex][columnIndex];
                 grid[rowIndex][columnIndex] = 0;
-
-                if (grid[rowIndex][theEmptyCellIndex] === grid[rowIndex][theEmptyCellIndex + 1]) {
-                    grid[rowIndex][theEmptyCellIndex+ 1] += grid[rowIndex][theEmptyCellIndex];
-                    grid[rowIndex][theEmptyCellIndex] = 0;
-                }
+            }
+            var currentIndex = theEmptyCellIndex === -1 ? columnIndex : theEmptyCellIndex;
+            if (grid[rowIndex][currentIndex] === grid[rowIndex][currentIndex + 1]) {
+                grid[rowIndex][currentIndex + 1] += grid[rowIndex][currentIndex];
+                grid[rowIndex][currentIndex] = 0;
             }
 
         }
@@ -93,6 +128,19 @@ function findTheFirstRightCell(rowIndex, columnIndex) {
             return i;
         }
     }
-
     return -1;
+}
+
+function rotateArray(rotateCount ) {
+    for (var i = 0 ; i < rotateCount; i ++) {
+        grid = rotateArrayToRightOnce(grid);
+    }
+
+    function rotateArrayToRightOnce(array) {
+        return array.map((row, rowIndex) => {
+                return row.map((item, columnIndex) => {
+                    return array[3 - columnIndex][rowIndex];
+                })
+        })
+    }
 }
